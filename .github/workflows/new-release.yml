@@ -1,0 +1,22 @@
+name: Check new PHP releases.
+
+on:
+  schedule: 
+    - cron: "* */24 * * *"
+
+permissions:
+  issues: write
+
+jobs:
+  notify_new_releases:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: Check the new php releases.
+        uses: nulxrd/notify-php-release-action@v1.0.0
+        with:
+          repo-token: ${{ github.token }}
+          repo: docker-php-cli
+          owner: nulxrd
+          localfile: .releases
