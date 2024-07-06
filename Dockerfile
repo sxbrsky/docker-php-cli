@@ -12,10 +12,11 @@ ENV PHPIZE_DEPS \
   re2c
 
 ARG GPG_KEYS="1198C0117593497A5EC5C199286AF1F9897469DC AFD8691FDAEDF03BDF6E460563F15A9B715376CA C28D937575603EB4ABB725861C0779DC5C0A9DE4"
+ARG GPG_CHECK=false
 
 ARG PHP_VERSION=8.3.8
-ARG PHP_URL="https://www.php.net/distributions/php-8.3.8.tar.xz"
-ARG PHP_ASC_URL="https://www.php.net/distributions/php-8.3.8.tar.xz.asc"
+ARG PHP_URL="https://www.php.net/distributions/php-${PHP_VERSION}.tar.xz"
+ARG PHP_ASC_URL="https://www.php.net/distributions/php-${PHP_VERSION}.tar.xz.asc"
 ARG PHP_SHA256="aea358b56186f943c2bbd350c9005b9359133d47e954cfc561385319ae5bb8d7"
 
 ENV PHP_INI_DIR="/usr/local/etc/php"
@@ -53,7 +54,9 @@ RUN set -eux; \
       curl \
       make; \
     \
-    apk add --no-cache --virtual .gnu-deps gnupg; \
+    if [ "$GPG_CHECK" = true ]; then \
+      apk add --no-cache --virtual .gnu-deps gnupg; \
+    fi; \
   \
   # export required environment variables
     export \
@@ -71,25 +74,27 @@ RUN set -eux; \
     # download sources
       curl -fsSL -o php.tar.xz "$PHP_URL"; \
     \
-    # generate checksum if not exists
-      if [-n "$PHP_SHA256"]; then \
-        echo "$PHP_SHA256 *php.tar.xz" | sha256sum -c -; \
-      fi; \
-    \
-    # verify checksum
-      if [ -n "$PHP_ASC_URL" ]; then \
-        curl -fsSL -o php.tar.xz.asc "$PHP_ASC_URL"; \
-        export GNUPGHOME="$(mktemp -d)"; \
-        for key in $GPG_KEYS; do \
-          gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "$key"; \
-        done; \
-        gpg --batch --verify php.tar.xz.asc php.tar.xz; \
-        gpgconf --kill all; \
-        rm -rf "$GNUPGHOME"; \
-      fi; \
-    \
-    # remove gnu-deps
-      apk del --no-network .gnu-deps; \
+    if [ "$GPG_CHECK" = true]; then \
+      # generate checksum if not exists
+        if [-n "$PHP_SHA256"]; then \
+          echo "$PHP_SHA256 *php.tar.xz" | sha256sum -c -; \
+        fi; \
+      \
+      # verify checksum
+        if [ -n "$PHP_ASC_URL" ]; then \
+          curl -fsSL -o php.tar.xz.asc "$PHP_ASC_URL"; \
+          export GNUPGHOME="$(mktemp -d)"; \
+          for key in $GPG_KEYS; do \
+            gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "$key"; \
+          done; \
+          gpg --batch --verify php.tar.xz.asc php.tar.xz; \
+          gpgconf --kill all; \
+          rm -rf "$GNUPGHOME"; \
+        fi; \
+      \
+      # remove gnu-deps
+        apk del --no-network .gnu-deps; \
+    fi; \
     \
     # extract sources
       docker-php-source extract; \
