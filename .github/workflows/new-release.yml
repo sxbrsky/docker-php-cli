@@ -1,6 +1,7 @@
 name: Check new PHP releases.
 
 on:
+  push:
   schedule: 
     - cron: "* */24 * * *"
 
@@ -14,7 +15,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
       - name: Check the new php releases.
-        uses: nulxrd/notify-php-release-action@v1.0.0
+        uses: nulxrd/notify-php-release-action@v1.0.1
         with:
           repo-token: ${{ github.token }}
           repo: docker-php-cli
