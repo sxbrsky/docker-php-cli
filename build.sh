@@ -7,7 +7,7 @@ DOCKER_REPOSITORY=nulxrd/php-cli
 
 GPG_CHECK=false
 LATEST=false
-PHP_VERSION="8.3.8"
+PHP_VERSION="8.3.9"
 TARGET_PLATFORM="linux/amd64,linux/arm64"
 
 while [ "$#" -gt 0 ]; do
