@@ -1,7 +1,6 @@
 name: Check new PHP releases.
 
 on:
-  push:
   schedule: 
     - cron: "* */24 * * *"
 
