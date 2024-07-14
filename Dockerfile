@@ -1,5 +1,8 @@
 FROM alpine:3.19
 
+ARG PHP_VERSION=8.3.8
+ARG PHP_URL="https://www.php.net/distributions/php-${PHP_VERSION}.tar.xz"
+
 ENV PHPIZE_DEPS \
   autoconf \
   dpkg dpkg-dev \
@@ -11,17 +14,12 @@ ENV PHPIZE_DEPS \
   pkgconf \
   re2c
 
-ARG GPG_KEYS="1198C0117593497A5EC5C199286AF1F9897469DC AFD8691FDAEDF03BDF6E460563F15A9B715376CA C28D937575603EB4ABB725861C0779DC5C0A9DE4"
-ARG GPG_CHECK=false
-
-ARG PHP_VERSION=8.3.8
-ARG PHP_URL="https://www.php.net/distributions/php-${PHP_VERSION}.tar.xz"
-ARG PHP_ASC_URL="https://www.php.net/distributions/php-${PHP_VERSION}.tar.xz.asc"
-ARG PHP_SHA256="aea358b56186f943c2bbd350c9005b9359133d47e954cfc561385319ae5bb8d7"
-
+ENV PHP_SHA256=""
 ENV PHP_INI_DIR="/usr/local/etc/php"
 ENV PHP_SCAN_DIR="$PHP_INI_DIR/conf.d"
 
+ENV PHP_LDFLAGS="-Wl,-O3 -pie"
+ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O3 \
   -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 \
   -march=native \
@@ -29,9 +27,6 @@ ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O3 \
   -ffast-math \
   -finline-functions \
 "
-
-ENV PHP_CPPFLAGS="$PHP_CFLAGS"
-ENV PHP_LDFLAGS="-Wl,-O3 -pie"
 
 COPY docker-entrypoint docker-php-* /usr/local/bin/
 
@@ -53,10 +48,6 @@ RUN set -eux; \
       sqlite-dev \
       curl \
       make; \
-    \
-    if [ "$GPG_CHECK" = true ]; then \
-      apk add --no-cache --virtual .gnu-deps gnupg; \
-    fi; \
   \
   # export required environment variables
     export \
@@ -67,33 +58,16 @@ RUN set -eux; \
       PHP_UNAME='Linux - Docker' \
     ; \
   \
-  # gets php sources. \
+  # gets php sources \
     mkdir -p /usr/src; \
     cd /usr/src; \
     \
     # download sources
       curl -fsSL -o php.tar.xz "$PHP_URL"; \
     \
-    if [ "$GPG_CHECK" = true]; then \
-      # generate checksum if not exists
-        if [-n "$PHP_SHA256"]; then \
-          echo "$PHP_SHA256 *php.tar.xz" | sha256sum -c -; \
-        fi; \
-      \
-      # verify checksum
-        if [ -n "$PHP_ASC_URL" ]; then \
-          curl -fsSL -o php.tar.xz.asc "$PHP_ASC_URL"; \
-          export GNUPGHOME="$(mktemp -d)"; \
-          for key in $GPG_KEYS; do \
-            gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "$key"; \
-          done; \
-          gpg --batch --verify php.tar.xz.asc php.tar.xz; \
-          gpgconf --kill all; \
-          rm -rf "$GNUPGHOME"; \
-        fi; \
-      \
-      # remove gnu-deps
-        apk del --no-network .gnu-deps; \
+    # generate checksum if not exists
+    if [-n "$PHP_SHA256"]; then \
+      echo "$PHP_SHA256 *php.tar.xz" | sha256sum -c -; \
     fi; \
     \
     # extract sources
