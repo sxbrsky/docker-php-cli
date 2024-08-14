@@ -54,7 +54,7 @@ RUN set -eux; \
       CFLAGS="$PHP_CFLAGS" \
       CPPFLAGS="$PHP_CPPFLAGS" \
       LDFLAGS="$PHP_LDFLAGS" \
-      PHP_BUILD_PROVIDER='https://github.com/nulxrd/docker-php-cli' \
+      PHP_BUILD_PROVIDER='https://github.com/sxbrsky/docker-php-cli' \
       PHP_UNAME='Linux - Docker' \
     ; \
   \
