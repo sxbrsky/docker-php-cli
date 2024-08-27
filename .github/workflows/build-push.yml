@@ -1,0 +1,60 @@
+name: Build php-cli docker image
+
+on:
+    push:
+        tags:
+            - '*.*.*'
+
+defaults:
+    run:
+        shell: 'bash -Eeuo pipefail -x {0}'
+
+concurrency:
+    group: ${{ github.ref }}
+    cancel-in-progress: true
+
+permissions:
+    contents: read
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+            -
+                name: checkout repository
+                uses: actions/checkout@v4
+            -
+                name: setup docker buildx
+                uses: docker/setup-buildx-action@v3
+            -
+                name: login to registry
+                uses: docker/login-action@v3
+                with:
+                    username: ${{ secrets.REGISTRY_USERNAME }}
+                    password: ${{ secrets.REGISTRY_TOKEN }}
+            -
+                id: vars
+                name: Set current tag
+                run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+            -
+                id: meta
+                name: extract version and generate tags
+                uses: docker/metadata-action@v5
+                with:
+                    images: sxbrsky/php-cli
+                    tags: |
+                        type=raw,value=latest
+                        type=ref,event=tag
+                        type=semver,pattern={{major}}.{{minor}}
+                        type=semver,pattern={{major}}.{{minor}}.{{patch}}
+            -
+                name: build and push docker image
+                uses: docker/build-push-action@v5
+                with:
+                    context: .
+                    platforms: linux/amd64,linux/arm64
+                    push: true
+                    tags: ${{ steps.meta.outputs.tags }}
+                    build-args: |
+                        PHP_VERSION=${{ steps.vars.outputs.tag }}
