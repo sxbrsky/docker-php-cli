@@ -2,7 +2,7 @@ name: Check new PHP releases.
 
 on:
   schedule:
-    - cron: "* 4 15 * *"
+    - cron: "00 04 * * *"
 
 permissions:
   issues: write
